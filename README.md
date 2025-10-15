@@ -1,6 +1,6 @@
 # File-Sharing-Application
 
-File Transfer Application using Python and Tkinter
+File Transfer Application using Python and Tkinter.
 
 **File Transfer Application** developed in **Python**, designed to enable seamless and secure file sharing between devices over a **local network (LAN/Wi-Fi)**.  
 This project implements a **client–server architecture** using **TCP sockets**, integrated with a user-friendly **Tkinter GUI** for both sender and receiver interfaces.
