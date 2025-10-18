@@ -180,7 +180,7 @@ def Send():
 
     #Percentage
     percentage_label=Label(window, text=" ",font =('arial',12),bg="#ab95b5")
-    percentage_label.place(x=400,y=185)
+    percentage_label.place(x=390,y=178)
 
     #Speed
     speed_label=Label(window, text="Speed",font =('arial',14,'bold'),bg="#ab95b5")
@@ -210,7 +210,7 @@ def Send():
     sentSize_label.place(x=105,y=201)
 
     #progress Bar
-    progress = Progressbar(window, length=382, mode="determinate")
+    progress = Progressbar(window, length=375, mode="determinate")
     progress.place(x=12,y=178)
 
     # Separator Line

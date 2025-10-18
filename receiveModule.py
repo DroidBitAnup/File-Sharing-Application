@@ -275,8 +275,8 @@ def Receive():
     
 
     #Percentage
-    percentage_label=Label(main, text=" ",font =('arial',12),bg="#ab95b5")
-    percentage_label.place(x=400,y=185)
+    percentage_label=Label(main, text="",font =('arial',12),bg="#ab95b5")
+    percentage_label.place(x=390,y=178)
 
     #Speed
     speed_label=Label(main, text="Speed",font =('arial',14,'bold'),bg="#ab95b5")
@@ -306,7 +306,7 @@ def Receive():
     ReceivedSize_label.place(x=105,y=201)
 
     #progress Bar
-    progress = Progressbar(main, length=382, mode="determinate")
+    progress = Progressbar(main, length=375, mode="determinate")
     progress.place(x=12,y=178)
 
     # Separator Line
