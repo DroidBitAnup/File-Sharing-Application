@@ -19,6 +19,7 @@ def Send():
     IP_var=StringVar(value="")
     SEPARATOR = "<SEPARATOR>"
     BUFFER_SIZE = 4096
+    senderName=""
     
     
     #Functions
@@ -64,22 +65,7 @@ def Send():
         try:
             filesize = os.path.getsize(filepath)
             filename = os.path.basename(filepath)
-    
-            status_label.config(text=f"Connecting to {hostname}")
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(10)
-            sock.connect((hostname, port))
-            sock.settimeout(None)
-    
-            header = f"{filename}{SEPARATOR}{filesize}{SEPARATOR}{hostname}".encode()
-            sock.sendall(header)  # send header in one shot (small)
-            # optional small delay could be used if receiver expects but not necessary
-    
-            sent = 0
-            progress["maximum"] = filesize
-            progress["value"] = 0
-            
-            
+
             #Fillesize convertion
             if filesize>=(1024*1024) and filesize<(1024*1024*1024):
                 totalfilesize=filesize/(1024*1024)
@@ -90,6 +76,21 @@ def Send():
             else:
                 totalfilesize=filesize/(1024)
                 sizetxt="KB"
+    
+            status_label.config(text=f"Connecting to {hostname}")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
+            sock.connect((hostname, port))
+            sock.settimeout(None)
+    
+            header = f"{filename}{SEPARATOR}{filesize}{SEPARATOR}{senderName}".encode()
+            sock.sendall(header)  # send header in one shot (small)
+            # optional small delay could be used if receiver expects but not necessary
+    
+            sent = 0
+            progress["maximum"] = filesize
+            progress["value"] = 0
+            
 
             time.sleep(5)
             slash.config(text="/")
@@ -138,7 +139,7 @@ def Send():
             percentage_label.config(text="100%")
             speed_label_Numeric.config(text="") 
             ETA_label_Numeric.config(text="")
-            sentSize_label.config(text=f"{totalfilesize} {sizetxt}")
+            sentSize_label.config(text=f"{totalfilesize:.2f} {sizetxt}")
             messagebox.showinfo("Success", f"File sent: {filename}",parent=window)
             Send_Btn.config(state="normal")
         except Exception as e:
@@ -148,7 +149,7 @@ def Send():
             percentage_label.config(text=f"{percent:.2f}%")
             speed_label_Numeric.config(text="") 
             ETA_label_Numeric.config(text="")
-            sentSize_label.config(text=f"{sent} {sizetxt}")
+            sentSize_label.config(text=f"{sentsize:.2f} {sizetxt}")
             messagebox.showerror("Error", str(e),parent=window)    
     
     
@@ -168,7 +169,7 @@ def Send():
     back.place(x=100,y=320)
     
     #Host
-    host=socket.gethostname()
+    senderName=host=socket.gethostname()
     Label(window,text=f'ID: {host}',bg='white',fg='black').place(x=140,y=350)
     
     #Selected File

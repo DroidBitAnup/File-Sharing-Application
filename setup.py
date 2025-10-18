@@ -2,6 +2,10 @@ import cx_Freeze
 import sys
 import os 
 
+# IN terminal
+#python setup.py bdist_msi                                                                                                                                   
+
+
 base = None
 
 if sys.platform == 'win32':

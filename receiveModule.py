@@ -217,7 +217,7 @@ def Receive():
                 percentage_label.config(text="100%")
                 speed_label_Numeric.config(text="")
                 ETA_label_Numeric.config(text="")
-                ReceivedSize_label.config(text=f"{totalfilesize} {sizetxt}")
+                ReceivedSize_label.config(text=f"{totalfilesize:.2f} {sizetxt}")
                 messagebox.showinfo("Received", f"Saved to: {save_path}",parent=main)
             else:
                 status_label.config(text="Receive incomplete / connection closed")
@@ -225,7 +225,7 @@ def Receive():
                 speed_label_Numeric.config(text="")
                 ETA_label_Numeric.config(text="")
                 progress["value"] = received
-                ReceivedSize_label.config(text=f"{receivedsize} {sizetxt}")
+                ReceivedSize_label.config(text=f"{receivedsize:.2f} {sizetxt}")
                 messagebox.showwarning("Warning", "File transfer incomplete.",parent=main)
         except Exception as e:
             try:
@@ -238,8 +238,8 @@ def Receive():
             percentage_label.config(text=f"{percent:.2f}%")
             speed_label_Numeric.config(text="")
             ETA_label_Numeric.config(text="")  
-            ReceivedSize_label.config(text=f"{receivedsize} {sizetxt}")
-            
+            ReceivedSize_label.config(text=f"{receivedsize:.2f} {sizetxt}")
+
             messagebox.showerror("Error", str(e),parent=main)    
 
     #Icon
