@@ -133,7 +133,7 @@ def Receive():
                 return
             filename, filesize_str,sender= header.split(SEPARATOR)
             filesize = int(filesize_str)
-            status_label.config(text=f"Connection from {sender}")
+            status_label.config(text=f"Connection from:{sender}")
 
             safe_filename = os.path.basename(filename)
             save_path = os.path.join(save_folder_var.get(), safe_filename)
@@ -217,6 +217,7 @@ def Receive():
                 percentage_label.config(text="100%")
                 speed_label_Numeric.config(text="")
                 ETA_label_Numeric.config(text="")
+                ReceivedSize_label.config(text=f"{totalfilesize} {sizetxt}")
                 messagebox.showinfo("Received", f"Saved to: {save_path}",parent=main)
             else:
                 status_label.config(text="Receive incomplete / connection closed")
@@ -224,17 +225,21 @@ def Receive():
                 speed_label_Numeric.config(text="")
                 ETA_label_Numeric.config(text="")
                 progress["value"] = received
+                ReceivedSize_label.config(text=f"{receivedsize} {sizetxt}")
                 messagebox.showwarning("Warning", "File transfer incomplete.",parent=main)
         except Exception as e:
             try:
                 conn.close()
             except:
                 pass
+
             status_label.config(text="Error receiving file")
             progress["value"] = received
             percentage_label.config(text=f"{percent:.2f}%")
             speed_label_Numeric.config(text="")
             ETA_label_Numeric.config(text="")  
+            ReceivedSize_label.config(text=f"{receivedsize} {sizetxt}")
+            
             messagebox.showerror("Error", str(e),parent=main)    
 
     #Icon

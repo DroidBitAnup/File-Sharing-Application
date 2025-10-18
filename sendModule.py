@@ -138,7 +138,7 @@ def Send():
             percentage_label.config(text="100%")
             speed_label_Numeric.config(text="") 
             ETA_label_Numeric.config(text="")
-            sentSize_label.config(text=f"{sentsize} {sizetxt}")
+            sentSize_label.config(text=f"{totalfilesize} {sizetxt}")
             messagebox.showinfo("Success", f"File sent: {filename}",parent=window)
             Send_Btn.config(state="normal")
         except Exception as e:
@@ -148,6 +148,7 @@ def Send():
             percentage_label.config(text=f"{percent:.2f}%")
             speed_label_Numeric.config(text="") 
             ETA_label_Numeric.config(text="")
+            sentSize_label.config(text=f"{sent} {sizetxt}")
             messagebox.showerror("Error", str(e),parent=window)    
     
     
