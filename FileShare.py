@@ -17,6 +17,12 @@ server_socket = None
 running =False
 accept_thread = None
 
+def on_closing():
+            if messagebox.askokcancel("Quit", "Do you want to quit?",parent=root):
+                root.destroy()
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
 
 #function
 #send
@@ -32,6 +38,8 @@ def Send():
     file_var=StringVar(value="")
     IP_var=StringVar(value="")
     senderName=""
+
+    sock=None
     SEPARATOR = "<SEPARATOR>"
     BUFFER_SIZE = 4096
     
@@ -51,6 +59,12 @@ def Send():
         filename=filedialog.askopenfilename(parent=window)
         if filename:
             file_var.set(filename)
+
+
+    def cancel():
+        global sock
+        sock.close()
+        Cancel_Btn.config(state='disabled')
     
     
     def sender():
@@ -68,6 +82,7 @@ def Send():
                 messagebox.showerror("Error",f"Due To:{str(es)}",parent=window)     
     
     def send_file( port, filepath,hostname):
+        global sock
         sizetxt=""
         totalfilesize=0.0
         sentsize=0.0    
@@ -105,7 +120,7 @@ def Send():
             progress["maximum"] = filesize
             progress["value"] = 0
             
-
+            Cancel_Btn.config(state="normal")
             time.sleep(5)
             slash.config(text="/")
             totalSize_label.config(text=f"{totalfilesize:.2f} {sizetxt}")
@@ -148,7 +163,7 @@ def Send():
                     window.update_idletasks()
     
             sock.close()
-            status_label.config(text=f"Sent: {filename} ({filesize} bytes){host}")
+            status_label.config(text=f"Sent: {filename}")
             progress["value"] = filesize
             percentage_label.config(text="100%")
             speed_label_Numeric.config(text="") 
@@ -169,8 +184,8 @@ def Send():
     
     
     #Icon
-    image_icon=PhotoImage(file=r"Images\send.png")
-    window.iconphoto(True,image_icon)
+    image_iconSend=PhotoImage(file=r"Images\send.png")
+    window.iconphoto(True,image_iconSend)
     
     sendbackground=PhotoImage(file=r"Images/sender.png")
     sendback=Label(window,image=sendbackground,bg="#ab95b5")
@@ -242,6 +257,11 @@ def Send():
     Button(window,text="+ Select File",command=select_file,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000").place(x=160,y=130)
     Send_Btn=Button(window,text="Send",command=sender,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000")
     Send_Btn.place(x=300,y=130)
+
+    Cancel_Btn=Button(window,text="Cancel",command=cancel,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000")
+    Cancel_Btn.place(x=11,y=130)
+    Cancel_Btn.config(state="disabled")
+
     
     
     window.mainloop()
@@ -264,10 +284,10 @@ def Receive():
     BUFFER_SIZE = 4096
 
 
+
     def on_closing():
             if messagebox.askokcancel("Quit", "Do you want to quit?",parent=main):
                 main.destroy()
-                exit(0)
 
     main.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -294,18 +314,20 @@ def Receive():
         except Exception as es:
             messagebox.showerror("Error",f"Due To:{str(es)}",parent=main)
 
+
     def stop_server():
-        global running
+        global running,conn
+
         running = False
+        conn.close()
         if server_socket:
             try:
                 server_socket.close()
+                
             except:
                 pass
         start.config(state="normal")
         Close.config(state="disabled")
-        status_label.config(text="Status: Stopped")
-        progress["value"] = 0
 
 
 
@@ -557,8 +579,9 @@ def Receive():
     start=Button(main,text="Receive",command=start_server_thread,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000")
     start.place(x=15,y=130)
 
-    Close=Button(main,text="Close",command=stop_server,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000")
+    Close=Button(main,text="Cancel",command=stop_server,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000")
     Close.place(x=160,y=130)
+    Close.config(state='disabled')
 
     Browse=Button(main,text="Browse",command=browse_folder,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000")
     Browse.place(x=300,y=130)
