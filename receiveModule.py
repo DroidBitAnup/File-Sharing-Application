@@ -5,6 +5,10 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter.ttk import Progressbar
 import os,time
+from zeroconf import Zeroconf, ServiceInfo
+import platform
+
+PORT = 9090
 
 server_socket = None
 running =False
@@ -41,6 +45,23 @@ def Receive():
             save_folder_var.set(path)
 
 
+    # ---------------- Advertise using mDNS ----------------
+    def advertise():
+        hostname = platform.node()
+        #print(hostname)
+        ip = socket.inet_aton(socket.gethostbyname(socket.gethostname()))
+    
+        info = ServiceInfo(
+            "_quickshare._tcp.local.",
+            f"{hostname}._quickshare._tcp.local.",
+            addresses=[ip],
+            port=PORT,
+            properties={"device": hostname},
+        )
+    
+        zeroconf = Zeroconf()
+        zeroconf.register_service(info)
+
     def start_server_thread():
         global running
         try:
@@ -74,6 +95,7 @@ def Receive():
 
 
     def run_server( ip, port):
+            
             global running
             progress["value"] =0
             percentage_label.config(text="")
@@ -107,6 +129,7 @@ def Receive():
                 except OSError:
                     break
                 t = threading.Thread(target=handle_client, args=(conn, addr), daemon=True)
+                server_socket.close()
                 t.start()
 
             # cleanup on exit
@@ -116,9 +139,14 @@ def Receive():
                 pass
 
     def handle_client( conn, addr):
+        global running
+        running = False
+        
+        global received
         sizetxt=""
         totalfilesize=0.0
         receivedsize=0.0
+        percent=0
         try:
             #status_label.config(text=f"Connection from {addr[0]}")
             # receive header (filename and filesize)
@@ -126,17 +154,37 @@ def Receive():
             if not header_bytes:
                 conn.close()
                 return
-            header = header_bytes.decode(errors="ignore")
+            header = header_bytes.decode()
             if SEPARATOR not in header:
                 # malformed header
                 conn.close()
                 return
-            filename, filesize_str,sender= header.split(SEPARATOR)
-            filesize = int(filesize_str)
+            
+            filesize_str,sender,filecount= header.split(SEPARATOR)
+            filecount=int(filecount)
+            print(sender)
+            filesize = float(filesize_str)
+            print(filesize)
             status_label.config(text=f"Connection from:{sender}")
+            time.sleep(4.5)
+            
+            #header=None
+            #header_bytes = conn.recv(BUFFER_SIZE)
+            #if not header_bytes:
+            #    conn.close()
+            #    return
+            #header = header_bytes.decode(errors="ignore")
+            #
+            #if SEPARATOR not in header:
+            #    # malformed header
+            #    conn.close()
+            #    return
 
-            safe_filename = os.path.basename(filename)
-            save_path = os.path.join(save_folder_var.get(), safe_filename)
+            #filename,filesize_str=header.split(SEPARATOR)
+            #eachfilesize=float(filesize_str)
+            #print(filename)
+            #safe_filename = os.path.basename(filename)
+            #save_path = os.path.join(save_folder_var.get(), safe_filename)
 
             #Fillesize convertion
             if filesize>=(1024*1024) and filesize<(1024*1024*1024):
@@ -151,69 +199,113 @@ def Receive():
 
 
 
-            # if file exists, create a new name
-            base, ext = os.path.splitext(save_path)
-            counter = 1
-            while os.path.exists(save_path):
-                save_path = f"{base}({counter}){ext}"
-                counter += 1
+            ## if file exists, create a new name
+            #base, ext = os.path.splitext(save_path)
+            #counter = 1
+            #while os.path.exists(save_path):
+            #    save_path = f"{base}({counter}){ext}"
+            #    counter += 1
 
             progress["maximum"] = filesize
             progress["value"] = 0
-            received = 0
-            time.sleep(5)
+            received = 0.0
             slash.config(text="/")
             totalSize_label.config(text=f"{totalfilesize:.2f} {sizetxt}")
-            status_label.config(text=f"Receiving {safe_filename}")
 
-            with open(save_path, "wb") as f:
+            f = conn.makefile("rb")
+
+            
+            for _ in range(filecount):
+
+                header_bytes=None
+                header=None
                 
-                start = time.time()
-                last_time = start
-                last_recv = 0
-                percent=0
-                speed=0
-                eta=0
-                while received < filesize:
-                    chunk = conn.recv(BUFFER_SIZE)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    received += len(chunk)
-                    progress["value"] = received
+                header_bytes = f.readline().decode().strip("\n")
+                if not header_bytes:
+                    conn.close()
+                    return
+                
+                print("Header Received")
+                header = header_bytes
+                header_bytes=None
+                
+                if SEPARATOR not in header:
+                    # malformed header
+                    conn.close()
+                    return
+                
+                filename=""
 
-                    #Recieved size convertion
-                    if sizetxt=="KB":
-                        receivedsize=received/1024
+                filesize_str,filename=header.split(SEPARATOR)
+                print(type(filesize_str))
+                eachfilesize=int(filesize_str)
+                header=None
 
-                    elif sizetxt=="MB":
-                        receivedsize=received/(1024*1024)    
+                print(filesize_str)
+                print(f"{filename} EndName")
+                safe_filename = os.path.basename(filename)
+                save_path = os.path.join(save_folder_var.get(), safe_filename)
 
-                    elif sizetxt=="GB":
-                        receivedsize=received/(1024*1024*1024)
+                base, ext = os.path.splitext(save_path)
+                counter = 1
+                while os.path.exists(save_path):
+                    save_path = f"{base}({counter}){ext}"
+                    counter += 1
 
 
-                    now = time.time()
-                    if now - last_time >= 1:
-                        percent = (received / filesize) * 100
-                        diff = received - last_recv
-                        speed = diff / (now - last_time) / (1024 * 1024)
-                        eta = (filesize - received) / (speed * 1024 * 1024) if speed > 0 else 0
+                with open(save_path, "wb") as file:
 
-                        last_time = now
-                        last_recv = received
-                        percentage_label.config(text=f"{percent:.2f}%")
-                        speed_label_Numeric.config(text=f"{speed:.2f} MB/s") 
-                        ETA_label_Numeric.config(text=f"{eta/60:.2f} Minutes") 
-                        ReceivedSize_label.config(text=f"{receivedsize:.2f} {sizetxt}")
-                    main.update_idletasks()
+                    status_label.config(text=f"Receiving {safe_filename}")
+
+                    start = time.time()
+                    last_time = start
+                    last_recv = 0
+
+                    speed=0
+                    eta=0
+                    eachfilereceived=0           
+                    #while received < filesize:
+                    while eachfilereceived <= eachfilesize:
+                        chunk = conn.recv(BUFFER_SIZE)
+                        if not chunk:
+                            break
+                        file.write(chunk)
+                        eachfilereceived += len(chunk)
+                        received += len(chunk)
+                        progress["value"] = received
+
+                        #Recieved size convertion
+                        if sizetxt=="KB":
+                            receivedsize=received/1024
+
+                        elif sizetxt=="MB":
+                            receivedsize=received/(1024*1024)    
+
+                        elif sizetxt=="GB":
+                            receivedsize=received/(1024*1024*1024)
+
+
+                        now = time.time()
+                        if now - last_time >= 1:
+                            percent = (received / filesize) * 100
+                            diff = received - last_recv
+                            speed = diff / (now - last_time) / (1024 * 1024)
+                            eta = (filesize - received) / (speed * 1024 * 1024) if speed > 0 else 0
+
+                            last_time = now
+                            last_recv = received
+                            percentage_label.config(text=f"{percent:.2f}%")
+                            speed_label_Numeric.config(text=f"{speed:.2f} MB/s") 
+                            ETA_label_Numeric.config(text=f"{eta/60:.2f} Minutes") 
+                            ReceivedSize_label.config(text=f"{receivedsize:.2f} {sizetxt}")
+                        main.update_idletasks()
 
                     
 
             conn.close()
-            if received >= filesize:
+            if received >= totalfilesize:
                 status_label.config(text=f"Received: {safe_filename} -> {save_path}")
-                progress["value"] = filesize
+                progress["value"] = totalfilesize
                 percentage_label.config(text="100%")
                 speed_label_Numeric.config(text="")
                 ETA_label_Numeric.config(text="")
@@ -241,6 +333,7 @@ def Receive():
             ReceivedSize_label.config(text=f"{receivedsize:.2f} {sizetxt}")
 
             messagebox.showerror("Error", str(e),parent=main)    
+            print(e)
 
     #Icon
     image_icon=PhotoImage(file=r"Images\receive.png")
@@ -326,6 +419,9 @@ def Receive():
 
     Browse=Button(main,text="Browse",command=browse_folder,width=10,height=1,font='arial 14 bold',bg="#fff",fg="#000")
     Browse.place(x=300,y=130)
+
+    adv=threading.Thread(target=advertise, daemon=None)
+    adv.start()
 
     main.mainloop()
 
